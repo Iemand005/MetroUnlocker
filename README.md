@@ -11,3 +11,6 @@
 - Windows 8.1 Pro and up
 
 Development sideloading takes a while to activate. If it doesn't happen automatically, use Product Policy Editor to disable SPPSVC, set the system clock to 2026, try sideloading until it activates and revert the clock and enable SPPSVC again.
+
+
+Huge thanks to [TSForge](https://github.com/massgravel/TSforge) for making this possible by reverse engineering SPPSVC!
