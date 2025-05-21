@@ -13,12 +13,12 @@ namespace MetroUnlocker.LibTSForge.SPP
 {
     public static class SLApi
     {
-        private enum SLIDTYPE
+        private enum SLIDType
         {
-            SL_ID_APPLICATION,
-            SL_ID_PRODUCT_SKU,
-            SL_ID_LICENSE_FILE,
-            SL_ID_LICENSE,
+            SLIDApplication,
+            SLIDProductSku,
+            SLIDLicenseFile,
+            SLIDLicense,
             SL_ID_PKEY,
             SL_ID_ALL_LICENSES,
             SL_ID_ALL_LICENSE_FILES,
@@ -26,7 +26,7 @@ namespace MetroUnlocker.LibTSForge.SPP
             SL_ID_LAST
         }
 
-        private enum SLDATATYPE
+        private enum SLDataType
         {
             SL_DATA_NONE,
             SL_DATA_SZ,
@@ -37,7 +37,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct SL_LICENSING_STATUS
+        private struct SLLicensingStatus
         {
             public Guid SkuId;
             public uint eStatus;
@@ -46,8 +46,6 @@ namespace MetroUnlocker.LibTSForge.SPP
             public uint hrReason;
             public ulong qwValidityExpiration;
         }
-
-        public static readonly Guid WINDOWS_APP_ID = new Guid("55c92734-d682-4d71-983e-d6ec3f16059f");
 
         [DllImport("sppc.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
         private static extern void SLOpen(out IntPtr hSLC);
@@ -65,7 +63,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         private static extern uint SLUninstallProofOfPurchase(IntPtr hSLC, ref Guid PKeyId);
 
         [DllImport("sppc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetPKeyInformation(IntPtr hSLC, ref Guid pPKeyId, string pwszValueName, out SLDATATYPE peDataType, out uint pcbValue, out IntPtr ppbValue);
+        private static extern uint SLGetPKeyInformation(IntPtr hSLC, ref Guid pPKeyId, string pwszValueName, out SLDataType peDataType, out uint pcbValue, out IntPtr ppbValue);
 
         [DllImport("sppcext.dll", CharSet = CharSet.Unicode)]
         private static extern uint SLActivateProduct(IntPtr hSLC, ref Guid pProductSkuId, byte[] cbAppSpecificData, byte[] pvAppSpecificData, byte[] pActivationInfo, string pwszProxyServer, ushort wProxyPort);
@@ -77,7 +75,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         private static extern uint SLDepositOfflineConfirmationId(IntPtr hSLC, ref Guid pProductSkuId, string pwszInstallationId, string pwszConfirmationId);
 
         [DllImport("sppc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetSLIDList(IntPtr hSLC, SLIDTYPE eQueryIdType, ref Guid pQueryId, SLIDTYPE eReturnIdType, out uint pnReturnIds, out IntPtr ppReturnIds);
+        private static extern uint SLGetSLIDList(IntPtr hSLC, SLIDType eQueryIdType, ref Guid pQueryId, SLIDType eReturnIdType, out uint pnReturnIds, out IntPtr ppReturnIds);
 
         [DllImport("sppc.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
         private static extern void SLGetLicensingStatusInformation(IntPtr hSLC, ref Guid pAppID, IntPtr pProductSkuId, string pwszRightName, out uint pnStatusCount, out IntPtr ppLicensingStatus);
@@ -89,7 +87,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         private static extern uint SLConsumeWindowsRight(uint unknown);
 
         [DllImport("slc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetProductSkuInformation(IntPtr hSLC, ref Guid pProductSkuId, string pwszValueName, out SLDATATYPE peDataType, out uint pcbValue, out IntPtr ppbValue);
+        private static extern uint SLGetProductSkuInformation(IntPtr hSLC, ref Guid pProductSkuId, string pwszValueName, out SLDataType peDataType, out uint pcbValue, out IntPtr ppbValue);
 
         [DllImport("slc.dll", CharSet = CharSet.Unicode)]
         private static extern uint SLGetProductSkuInformation(IntPtr hSLC, ref Guid pProductSkuId, string pwszValueName, IntPtr peDataType, out uint pcbValue, out IntPtr ppbValue);
@@ -128,7 +126,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         {
             using (SLContext sl = new SLContext())
             {
-                SLDATATYPE type;
+                SLDataType type;
                 uint len;
                 IntPtr ppReturnLics;
 
@@ -144,17 +142,17 @@ namespace MetroUnlocker.LibTSForge.SPP
             }
         }
 
-        public static Guid GetLicenseFileId(Guid licId)
+        public static Guid GetLicenseFileId(Guid licenseId)
         {
             using (SLContext sl = new SLContext())
             {
                 uint status;
                 uint count;
-                IntPtr ppReturnLics;
+                IntPtr returnLicenses;
 
-                status = SLGetSLIDList(sl.Handle, SLIDTYPE.SL_ID_LICENSE, ref licId, SLIDTYPE.SL_ID_LICENSE_FILE, out count, out ppReturnLics);
+                status = SLGetSLIDList(sl.Handle, SLIDType.SLIDLicense, ref licenseId, SLIDType.SLIDLicenseFile, out count, out returnLicenses);
 
-                return (status == 0 && count != 0) ? (Guid)Marshal.PtrToStructure(ppReturnLics, typeof(Guid)) : Guid.Empty;//new Guid(Marshal.PtrToStringAuto(ppReturnLics));
+                return (status == 0 && count != 0) ? (Guid)Marshal.PtrToStructure(returnLicenses, typeof(Guid)) : Guid.Empty;//new Guid(Marshal.PtrToStringAuto(returnLicenses));
             }
         }
 
@@ -168,9 +166,7 @@ namespace MetroUnlocker.LibTSForge.SPP
                 IntPtr dataPtr;
 
                 if (SLGetLicense(sl.Handle, ref fileId, out dataLen, out dataPtr) != 0)
-                {
                     return null;
-                }
 
                 byte[] data = new byte[dataLen];
                 Marshal.Copy(dataPtr, data, 0, (int)dataLen);
@@ -180,22 +176,20 @@ namespace MetroUnlocker.LibTSForge.SPP
             }
         }
 
-        public static string GetMetaStr(Guid actId, string value)
+        public static string GetMetaStr(Guid productSkuId, string value)
         {
             using (SLContext sl = new SLContext())
             {
-                uint len;
-                SLDATATYPE type;
-                IntPtr ppbValue;
+                uint length;
+                SLDataType type;
+                IntPtr binaryValue;
 
-                uint status = SLGetProductSkuInformation(sl.Handle, ref actId, value, out type, out len, out ppbValue);
+                uint status = SLGetProductSkuInformation(sl.Handle, ref productSkuId, value, out type, out length, out binaryValue);
 
-                if (status != 0 || len == 0 || type != SLDATATYPE.SL_DATA_SZ)
-                {
+                if (status != 0 || length == 0 || type != SLDataType.SL_DATA_SZ)
                     return null;
-                }
 
-                return Marshal.PtrToStringAuto(ppbValue);
+                return Marshal.PtrToStringAuto(binaryValue);
             }
         }
 
@@ -213,18 +207,17 @@ namespace MetroUnlocker.LibTSForge.SPP
             }
         }
 
-        public static Guid GetInstalledPkeyId(Guid actId)
+        public static Guid GetInstalledProductKeyId(Guid actId)
         {
             using (SLContext sl = new SLContext())
             {
                 uint status;
                 uint count;
-                IntPtr pProductKeyIds;
+                IntPtr productKeyIds;
 
-                status = SLGetInstalledProductKeyIds(sl.Handle, ref actId, out count, out pProductKeyIds);
+                status = SLGetInstalledProductKeyIds(sl.Handle, ref actId, out count, out productKeyIds);
 
-                //unsafe { return *(Guid*)pProductKeyIds; }
-                return (status == 0 && count != 0) ? (Guid)Marshal.PtrToStructure(pProductKeyIds, typeof(Guid)) : Guid.Empty;
+                return (status == 0 && count != 0) ? (Guid)Marshal.PtrToStructure(productKeyIds, typeof(Guid)) : Guid.Empty;
             }
         }
 
@@ -243,7 +236,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         {
             using (SLContext sl = new SLContext())
             {
-                SLDATATYPE type;
+                SLDataType type;
                 uint count;
                 IntPtr ppbValue;
 
@@ -255,9 +248,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         public static void FireStateChangedEvent(Guid appId)
         {
             using (SLContext sl = new SLContext())
-            {
                 SLFireEvent(sl.Handle, "msft:rm/event/licensingstatechanged", ref appId);
-            }
         }
 
         public static Guid GetAppId(Guid actId)
@@ -267,7 +258,7 @@ namespace MetroUnlocker.LibTSForge.SPP
                 uint count;
                 IntPtr pAppIds;
 
-                uint status = SLGetSLIDList(sl.Handle, SLIDTYPE.SL_ID_PRODUCT_SKU, ref actId, SLIDTYPE.SL_ID_APPLICATION, out count, out pAppIds);
+                uint status = SLGetSLIDList(sl.Handle, SLIDType.SLIDProductSku, ref actId, SLIDType.SLIDApplication, out count, out pAppIds);
 
                 if (status != 0 || count == 0)
                     return Guid.Empty;
@@ -281,7 +272,7 @@ namespace MetroUnlocker.LibTSForge.SPP
             using (SLContext sl = new SLContext())
             {
                 uint count;
-                SLDATATYPE type;
+                SLDataType type;
                 IntPtr ppbValue;
 
                 uint status = SLGetProductSkuInformation(sl.Handle, ref actId, "DependsOn", out type, out count, out ppbValue);

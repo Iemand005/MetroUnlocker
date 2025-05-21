@@ -72,9 +72,7 @@ namespace MetroUnlocker.LibTSForge.Crypto
 
                 byte[] hash;
                 using (SHA1 sha1 = SHA1.Create())
-                {
                     hash = sha1.ComputeHash(data);
-                }
 
                 return formatter.CreateSignature(hash);
             }
@@ -90,9 +88,7 @@ namespace MetroUnlocker.LibTSForge.Crypto
 
                 byte[] hash;
                 using (SHA1 sha1 = SHA1.Create())
-                {
                     hash = sha1.ComputeHash(data);
-                }
 
                 return deformatter.VerifySignature(hash, signature);
             }
@@ -113,9 +109,7 @@ namespace MetroUnlocker.LibTSForge.Crypto
         public static byte[] SHA256Hash(byte[] data)
         {
             using (SHA256 sha256 = SHA256.Create())
-            {
                 return sha256.ComputeHash(data);
-            }
         }
     }
 }

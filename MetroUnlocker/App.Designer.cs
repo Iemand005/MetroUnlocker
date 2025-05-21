@@ -29,34 +29,16 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(App));
-            this.temporaryButton = new System.Windows.Forms.Button();
             this.developmentCheckbox = new System.Windows.Forms.CheckBox();
             this.signedCheckbox = new System.Windows.Forms.CheckBox();
             this.allUsersCheckbox = new System.Windows.Forms.CheckBox();
             this.statusTextLabel = new System.Windows.Forms.Label();
             this.statusLabel = new System.Windows.Forms.Label();
-            this.LOBCheckBox = new System.Windows.Forms.CheckBox();
-            this.SPPCheckBox = new System.Windows.Forms.CheckBox();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.Manual = new System.Windows.Forms.TabControl();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.button1 = new System.Windows.Forms.Button();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.button2 = new System.Windows.Forms.Button();
-            this.groupBox1.SuspendLayout();
-            this.groupBox2.SuspendLayout();
-            this.Manual.SuspendLayout();
-            this.tabPage1.SuspendLayout();
-            this.tabPage2.SuspendLayout();
+            this.groupBox = new System.Windows.Forms.GroupBox();
+            this.disableButton = new System.Windows.Forms.Button();
+            this.unlockButton = new System.Windows.Forms.Button();
+            this.groupBox.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // temporaryButton
-            // 
-            resources.ApplyResources(this.temporaryButton, "temporaryButton");
-            this.temporaryButton.Name = "temporaryButton";
-            this.temporaryButton.UseVisualStyleBackColor = true;
-            this.temporaryButton.Click += new System.EventHandler(this.button1_Click);
             // 
             // developmentCheckbox
             // 
@@ -89,79 +71,36 @@
             resources.ApplyResources(this.statusLabel, "statusLabel");
             this.statusLabel.Name = "statusLabel";
             // 
-            // LOBCheckBox
+            // groupBox
             // 
-            resources.ApplyResources(this.LOBCheckBox, "LOBCheckBox");
-            this.LOBCheckBox.Name = "LOBCheckBox";
-            this.LOBCheckBox.UseVisualStyleBackColor = true;
+            resources.ApplyResources(this.groupBox, "groupBox");
+            this.groupBox.Controls.Add(this.signedCheckbox);
+            this.groupBox.Controls.Add(this.allUsersCheckbox);
+            this.groupBox.Controls.Add(this.developmentCheckbox);
+            this.groupBox.Name = "groupBox";
+            this.groupBox.TabStop = false;
             // 
-            // SPPCheckBox
+            // disableButton
             // 
-            resources.ApplyResources(this.SPPCheckBox, "SPPCheckBox");
-            this.SPPCheckBox.Name = "SPPCheckBox";
-            this.SPPCheckBox.UseVisualStyleBackColor = true;
+            resources.ApplyResources(this.disableButton, "disableButton");
+            this.disableButton.Name = "disableButton";
+            this.disableButton.UseVisualStyleBackColor = true;
+            this.disableButton.Click += new System.EventHandler(this.Uninstall);
             // 
-            // groupBox1
+            // unlockButton
             // 
-            resources.ApplyResources(this.groupBox1, "groupBox1");
-            this.groupBox1.Controls.Add(this.signedCheckbox);
-            this.groupBox1.Controls.Add(this.allUsersCheckbox);
-            this.groupBox1.Controls.Add(this.developmentCheckbox);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.TabStop = false;
-            // 
-            // groupBox2
-            // 
-            resources.ApplyResources(this.groupBox2, "groupBox2");
-            this.groupBox2.Controls.Add(this.LOBCheckBox);
-            this.groupBox2.Controls.Add(this.SPPCheckBox);
-            this.groupBox2.Controls.Add(this.temporaryButton);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.TabStop = false;
-            // 
-            // Manual
-            // 
-            resources.ApplyResources(this.Manual, "Manual");
-            this.Manual.Controls.Add(this.tabPage1);
-            this.Manual.Controls.Add(this.tabPage2);
-            this.Manual.Name = "Manual";
-            this.Manual.SelectedIndex = 0;
-            // 
-            // tabPage1
-            // 
-            this.tabPage1.Controls.Add(this.button2);
-            this.tabPage1.Controls.Add(this.button1);
-            resources.ApplyResources(this.tabPage1, "tabPage1");
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.UseVisualStyleBackColor = true;
-            // 
-            // button1
-            // 
-            resources.ApplyResources(this.button1, "button1");
-            this.button1.Name = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.JailbreakButton_Click);
-            // 
-            // tabPage2
-            // 
-            this.tabPage2.Controls.Add(this.groupBox2);
-            this.tabPage2.Controls.Add(this.groupBox1);
-            resources.ApplyResources(this.tabPage2, "tabPage2");
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.UseVisualStyleBackColor = true;
-            // 
-            // button2
-            // 
-            resources.ApplyResources(this.button2, "button2");
-            this.button2.Name = "button2";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.Uninstall);
+            resources.ApplyResources(this.unlockButton, "unlockButton");
+            this.unlockButton.Name = "unlockButton";
+            this.unlockButton.UseVisualStyleBackColor = true;
+            this.unlockButton.Click += new System.EventHandler(this.Jailbreak);
             // 
             // App
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.Manual);
+            this.Controls.Add(this.disableButton);
+            this.Controls.Add(this.groupBox);
+            this.Controls.Add(this.unlockButton);
             this.Controls.Add(this.statusLabel);
             this.Controls.Add(this.statusTextLabel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -171,13 +110,8 @@
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
-            this.Manual.ResumeLayout(false);
-            this.tabPage1.ResumeLayout(false);
-            this.tabPage2.ResumeLayout(false);
+            this.groupBox.ResumeLayout(false);
+            this.groupBox.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -185,21 +119,14 @@
 
         #endregion
 
-        private System.Windows.Forms.Button temporaryButton;
         private System.Windows.Forms.CheckBox developmentCheckbox;
         private System.Windows.Forms.CheckBox signedCheckbox;
         private System.Windows.Forms.CheckBox allUsersCheckbox;
         private System.Windows.Forms.Label statusTextLabel;
         private System.Windows.Forms.Label statusLabel;
-        private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.CheckBox LOBCheckBox;
-        private System.Windows.Forms.CheckBox SPPCheckBox;
-        private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.TabControl Manual;
-        private System.Windows.Forms.TabPage tabPage1;
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.TabPage tabPage2;
-        private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.GroupBox groupBox;
+        private System.Windows.Forms.Button unlockButton;
+        private System.Windows.Forms.Button disableButton;
     }
 }
 

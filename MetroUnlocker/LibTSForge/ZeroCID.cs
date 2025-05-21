@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using Microsoft.Win32;
+using System.Runtime.InteropServices;
 
+using Microsoft.Win32;
 
 using MetroUnlocker.LibTSForge.SPP;
 using MetroUnlocker.LibTSForge.PhysicalStore;
@@ -21,39 +22,37 @@ namespace MetroUnlocker
             uint status = SLApi.DepositConfirmationId(actId, instId, Constants.ZeroCID);
 
             if (status != 0)
-                throw new InvalidOperationException(string.Format("Failed to deposit fake CID. Status code: 0x{0}", status.ToString("X")));
+                throw new COMException(string.Format("Failed to deposit fake CID. Status code: 0x{0}", status.ToString("X")), (int)status);
         }
 
-        public static void Activate(PSVersion version, bool production, Guid actId)
+        public static void Activate(PhysicalStoreVersion version, bool production, Guid activationId)
         {
-            Guid appId = SLApi.GetAppId(actId);
+            Guid appId = SLApi.GetAppId(activationId);
 
-            string instId = SLApi.GetInstallationId(actId);
-            Guid pkeyId = SLApi.GetInstalledPkeyId(actId);
+            string instId = SLApi.GetInstallationId(activationId);
+            Guid pkeyId = SLApi.GetInstalledProductKeyId(activationId);
 
             Utils.KillSPP();
 
             using (PhysicalStore store = new PhysicalStore(version, production))
             {
-                byte[] hwidBlock = Constants.UniversalHWIDBlock;
+                byte[] hwidBlock = Constants.UniversalHardwareIdBlock;
 
                 byte[] iidHash = CryptoUtils.SHA256Hash(Utils.EncodeString(instId + '\0' + Constants.ZeroCID));
                 
 
-                string key = string.Format("SPPSVC\\{0}\\{1}", appId, actId);
+                string key = string.Format("SPPSVC\\{0}\\{1}", appId, activationId);
                 ModernBlock keyBlock = store.GetBlock(key, pkeyId.ToString());
 
                 if (keyBlock == null)
-                {
-                    throw new InvalidDataException("Failed to get product key data for activation ID: 0x" + actId + ".");
-                }
+                    throw new InvalidDataException("Failed to get product key data for activation ID: 0x" + activationId + ".");
 
-                VariableBag pkb = new VariableBag(keyBlock.Data);
+                VariableBag keyBag = new VariableBag(keyBlock.Data);
 
-                byte[] pkeyData = pkb.GetBlock("SppPkeyPhoneActivationData").Value;
+                byte[] pkeyData = keyBag.GetBlock("SppPkeyPhoneActivationData").Value;
                 
-                pkb.DeleteBlock("SppPkeyVirtual");
-                store.SetBlock(key, pkeyId.ToString(), pkb.Serialize());
+                keyBag.DeleteBlock("SppPkeyVirtual");
+                store.SetBlock(key, pkeyId.ToString(), keyBag.Serialize());
 
                 BinaryWriter writer = new BinaryWriter(new MemoryStream());
                 writer.Write(0x20);
@@ -69,27 +68,15 @@ namespace MetroUnlocker
                 writer.Write(pkeyData);
                 byte[] tsPkeyInfoData = Utils.GetBytes(writer);
 
+                string path = "msft:Windows/7.0/Phone/Cached/";
+
                 store.AddBlocks(new ModernBlock[] {
-                    new ModernBlock
-                    {
-                        Type = BlockType.NAMED,
-                        Flags = 0,
-                        KeyAsStr = key,
-                        ValueAsStr = "msft:Windows/7.0/Phone/Cached/HwidBlock/" + pkeyId,
-                        Data = tsHwidData
-                    }, 
-                    new ModernBlock
-                    {
-                        Type = BlockType.NAMED,
-                        Flags = 0,
-                        KeyAsStr = key,
-                        ValueAsStr = "msft:Windows/7.0/Phone/Cached/PKeyInfo/" + pkeyId,
-                        Data = tsPkeyInfoData
-                    }
+                    new ModernBlock(key, path + "HwidBlock/" + pkeyId, tsHwidData),
+                    new ModernBlock(key, path + "PKeyInfo/" + pkeyId, tsPkeyInfoData)
                 });
             }
 
-            Deposit(actId, instId);
+            Deposit(activationId, instId);
 
             SLApi.RefreshLicenseStatus();
             SLApi.FireStateChangedEvent(appId);

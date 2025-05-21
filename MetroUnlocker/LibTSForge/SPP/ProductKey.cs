@@ -70,21 +70,21 @@ namespace MetroUnlocker.LibTSForge.SPP
             {
                 new CRCBlock
                 {
-                    DataType = CRCBlockType.STRING,
-                    KeyAsStr = "SppPkeyBindingProductKey",
-                    ValueAsStr = ToString()
+                    DataType = CRCBlockType.String,
+                    KeyAsString = "SppPkeyBindingProductKey",
+                    ValueAsString = ToString()
                 },
                 new CRCBlock
                 {
-                    DataType = CRCBlockType.BINARY,
-                    KeyAsStr = "SppPkeyBindingMiscData",
+                    DataType = CRCBlockType.Binary,
+                    KeyAsString = "SppPkeyBindingMiscData",
                     Value = new byte[] { }
                 },
                 new CRCBlock
                 {
-                    DataType = CRCBlockType.STRING,
-                    KeyAsStr = "SppPkeyBindingAlgorithm",
-                    ValueAsStr = GetAlgoUri()
+                    DataType = CRCBlockType.String,
+                    KeyAsString = "SppPkeyBindingAlgorithm",
+                    ValueAsString = GetAlgoUri()
                 }
             });
 
@@ -245,7 +245,7 @@ namespace MetroUnlocker.LibTSForge.SPP
             );
         }
 
-        public byte[] GetPhoneData(PSVersion version)
+        public byte[] GetPhoneData(PhysicalStoreVersion version)
         {
             int serialHigh = Serial / 1000000;
             int serialLow = Serial % 1000000;

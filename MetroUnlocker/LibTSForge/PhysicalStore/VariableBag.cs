@@ -10,10 +10,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
         public List<CRCBlock> Blocks = new List<CRCBlock>();
 
         public VariableBag() { }
-        public VariableBag(byte[] data)
-        {
-            Deserialize(data);
-        }
+        public VariableBag(byte[] data) { Deserialize(data); }
 
         public void Deserialize(byte[] data)
         {
@@ -22,9 +19,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
             BinaryReader reader = new BinaryReader(new MemoryStream(data));
 
             while (reader.BaseStream.Position < len - 0x10)
-            {
-                Blocks.Add(CRCBlock.Decode(reader));
-            }
+                Blocks.Add(new CRCBlock(reader));
         }
 
         public byte[] Serialize()
@@ -39,40 +34,19 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
 
         public CRCBlock GetBlock(string key)
         {
-            foreach (CRCBlock block in Blocks)
-            {
-                if (block.KeyAsStr == key)
-                {
-                    return block;
-                }
-            }
-
-            return null;
+            return Blocks.Find(block => block.KeyAsString == key);
         }
 
         public void SetBlock(string key, byte[] value)
         {
-            for (int i = 0; i < Blocks.Count; i++)
-            {
-                CRCBlock block = Blocks[i];
-
-                if (block.KeyAsStr == key)
-                {
-                    block.Value = value;
-                    Blocks[i] = block;
-                    break;
-                }
-            }
+            int index = Blocks.FindIndex(block => block.KeyAsString == key);
+            if (index != -1) Blocks[index].Value = value;
         }
 
         public void DeleteBlock(string key)
         {
-            foreach (CRCBlock block in Blocks)
-                if (block.KeyAsStr == key)
-                {
-                    Blocks.Remove(block);
-                    return;
-                }
+            CRCBlock block = GetBlock(key);
+            if (block != null) Blocks.Remove(block);
         }
     }
 }

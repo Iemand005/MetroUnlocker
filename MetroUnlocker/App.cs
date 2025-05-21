@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 using System.Diagnostics;
 using Microsoft.Win32;
@@ -60,82 +61,36 @@ namespace MetroUnlocker
 
         public void UpdatePolicyState()
         {
-            var productPolicyEditor = new ProductPolicyEditor();
+            var productPolicyEditor = new ProductPolicyReader();
 
             var policyState = productPolicyEditor.GetPolicyStateByName("WSLicensingService-LOBSideloadingActivated");
             var isSideloadingKeyInstalled = LOBManager.IsSideloadingKeyInstalled();
 
+            statusLabel.ForeColor = isSideloadingKeyInstalled ? Color.DarkGreen: Color.DarkOrange;
+            disableButton.Enabled = isSideloadingKeyInstalled;
+
             switch (policyState)
             {
                 case PolicyState.Disabled:
-                    statusLabel.Text = "Disabled";
-                    statusLabel.ForeColor = Color.DarkRed;
-                    break;
-                case PolicyState.Enabled:
                     if (isSideloadingKeyInstalled)
-                    {
-                        statusLabel.Text = "Sideloading enabled";
-                        statusLabel.ForeColor = Color.DarkGreen;
-                    }
+                        statusLabel.Text = "Enabling...";
                     else
                     {
-                        statusLabel.Text = "Sideloading will be disabled soon";
-                        statusLabel.ForeColor = Color.DarkOrange;
+                        statusLabel.Text = "Disabled";
+                        statusLabel.ForeColor = Color.DarkRed;
                     }
                     break;
-                case PolicyState.Unknown:
+                case PolicyState.Enabled:
+                    statusLabel.Text = isSideloadingKeyInstalled ? "Sideloading enabled" : "Disabling...";
+                    break;
+                default:
                     statusLabel.Text = "Unknown";
                     statusLabel.ForeColor = Color.Black;
                     break;
             }
         }
 
-        private string CombineArguments(params string[] arguments)
-        {
-            return string.Join(" ", arguments);
-        }
-
-        private void SetSetupParameter(string key, object value, RegistryValueKind valueKind)
-        {
-            Registry.SetValue("HKEY_LOCAL_MACHINE\\SYSTEM\\Setup", key, value, valueKind);
-        }
-
-        private void SetSetupType(int type)
-        {
-            SetSetupParameter("SetupType", type, RegistryValueKind.DWord);
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            StartupArgument startupArgument;
-
-            if (LOBCheckBox.Checked && SPPCheckBox.Checked)
-                startupArgument = StartupArgument.EnableLOBAndEnableSPP;
-            else if (LOBCheckBox.Checked)
-                startupArgument = StartupArgument.EnableLOBAndDisableSPP;
-            else if (SPPCheckBox.Checked)
-                startupArgument = StartupArgument.DisableLOBAndEnableSPP;
-            else
-                startupArgument = StartupArgument.DisableLOBAndDisableSPP;
-
-            string commandLine = CombineArguments(new string[] { Application.ExecutablePath, StartupArguments.GetStartupArgumentString(startupArgument) });
-
-            SetSetupParameter("CmdLine", commandLine, RegistryValueKind.String);
-            SetSetupType(1);
-            DialogResult result = MessageBox.Show("Sideloading will be enabled after a reboot. Would you like to reboot now?", "Reboot?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-
-            switch (result)
-            {
-                case DialogResult.Yes:
-                    Rebooter.Reboot();
-                    break;
-                case DialogResult.Cancel:
-                    SetSetupType(0);
-                    break;
-            }
-        }
-
-        private void JailbreakButton_Click(object sender, EventArgs e)
+        private void Jailbreak(object sender, EventArgs e)
         {
             try
             {
@@ -145,12 +100,19 @@ namespace MetroUnlocker
                         return;
 
                 LOBManager.ActivateZeroCID();
+
+                LOBEnabled = true;
+                DevelopmentEnabled = true;
+
                 MessageBox.Show(this, "Sideloading activated!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
                 UpdatePolicyState();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Error while activating sideloading!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (ex is COMException && ((uint)((COMException)ex).ErrorCode) == 0xC004F014)
+                    MessageBox.Show(this, "You likely ran out of storage or something else caused your tokens.dat to get corrupted. SPPSVC will recreate it. Try rebooting to let Windows reactivate itself before trying again. Make sure you have at least 30MB free before using Sideloading Unlocker.", "The key was recognised but I can't activate it.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                else MessageBox.Show(this, ex.Message, "Error while activating sideloading!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

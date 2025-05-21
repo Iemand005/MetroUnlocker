@@ -57,11 +57,12 @@
     <Compile Include="App.Designer.cs">
       <DependentUpon>App.cs</DependentUpon>
     </Compile>
-    <Compile Include="LibTSForge\Common.cs" />
+    <Compile Include="Common.cs" />
     <Compile Include="LibTSForge\Crypto\CryptoUtils.cs" />
     <Compile Include="LibTSForge\Crypto\Keys.cs" />
     <Compile Include="LibTSForge\Crypto\PhysicalStoreCrypto.cs" />
-    <Compile Include="LibTSForge\Modifiers\GenPKeyInstall.cs" />
+    <Compile Include="LibTSForge\Modifiers\ProductKeyInstaller.cs" />
+    <Compile Include="LibTSForge\PhysicalStore\BasicBlock.cs" />
     <Compile Include="LibTSForge\PhysicalStore\CRCBlock.cs" />
     <Compile Include="LibTSForge\PhysicalStore\ModernBlock.cs" />
     <Compile Include="LibTSForge\PhysicalStore\PhysicalStore.cs" />
@@ -74,13 +75,9 @@
     <Compile Include="LibTSForge\ZeroCID.cs" />
     <Compile Include="LOBManager.cs" />
     <Compile Include="ProductPolicy\ProductPolicy.cs" />
-    <Compile Include="ProductPolicy\ProductPolicyEditor.cs" />
-    <Compile Include="ProductPolicy\Tools.cs" />
+    <Compile Include="ProductPolicy\ProductPolicyReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Rebooter.cs" />
-    <Compile Include="SPPManager.cs" />
-    <Compile Include="StartupArguments.cs" />
     <EmbeddedResource Include="App.resx">
       <DependentUpon>App.cs</DependentUpon>
     </EmbeddedResource>
@@ -93,7 +90,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="app.manifest" />
+    <None Include="app.manifest">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

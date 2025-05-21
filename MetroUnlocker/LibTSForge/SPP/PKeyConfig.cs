@@ -74,7 +74,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         }
     }
 
-    public class PKeyConfig
+    public class ProductKeyConfig
     {
         public Dictionary<Guid, ProductConfig> Products = new Dictionary<Guid, ProductConfig>();
         private List<Guid> loadedPkeyConfigs = new List<Guid>();
@@ -194,7 +194,7 @@ namespace MetroUnlocker.LibTSForge.SPP
             throw new FileNotFoundException("Failed to find product matching supplied product key parameters.");
         }
 
-        public PKeyConfig()
+        public ProductKeyConfig()
         {
 
         }

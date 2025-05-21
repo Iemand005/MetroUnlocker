@@ -6,68 +6,41 @@ using System.IO;
 
 namespace MetroUnlocker.LibTSForge.PhysicalStore
 {
-    public class ModernBlock
+    public class ModernBlock : BasicBlock
     {
         public BlockType Type;
         public uint Flags;
         public uint Unknown;
-        public byte[] Key;
-        public string KeyAsStr
-        {
-            get
-            {
-                return Utils.DecodeString(Key);
-            }
-            set
-            {
-                Key = Utils.EncodeString(value);
-            }
-        }
-        public byte[] Value;
-        public string ValueAsStr
-        {
-            get
-            {
-                return Utils.DecodeString(Value);
-            }
-            set
-            {
-                Value = Utils.EncodeString(value);
-            }
-        }
-        public uint ValueAsInt
-        {
-            get
-            {
-                return BitConverter.ToUInt32(Value, 0);
-            }
-            set
-            {
-                Value = BitConverter.GetBytes(value);
-            }
-        }
+
         public byte[] Data;
-        public string DataAsStr
+        public string DataAsString
         {
-            get
-            {
-                return Utils.DecodeString(Data);
-            }
-            set
-            {
-                Data = Utils.EncodeString(value);
-            }
+            get { return Utils.DecodeString(Data); }
+            set { Data = Utils.EncodeString(value); }
         }
+
         public uint DataAsInt
         {
-            get
-            {
-                return BitConverter.ToUInt32(Data, 0);
-            }
-            set
-            {
-                Data = BitConverter.GetBytes(value);
-            }
+            get { return BitConverter.ToUInt32(Data, 0); }
+            set { Data = BitConverter.GetBytes(value); }
+        }
+
+        public ModernBlock() { }
+        public ModernBlock(string key, string value, byte[] data, BlockType type = BlockType.NAMED, uint flags = 0)
+        {
+            Type = type;
+            Flags = flags;
+            KeyAsString = key;
+            ValueAsString = value;
+            Data = data;
+        }
+        public ModernBlock(ModernBlock block)
+        {
+            Type = block.Type;
+            Flags = block.Flags;
+            Unknown = block.Unknown;
+            Value = block.Value;
+            Data = block.Data;
         }
 
         public void Encode(BinaryWriter writer)
@@ -81,7 +54,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
             writer.Write(Data);
         }
 
-        public static ModernBlock Decode(BinaryReader reader)
+        public ModernBlock(BinaryReader reader)
         {
             uint type = reader.ReadUInt32();
             uint flags = reader.ReadUInt32();
@@ -93,14 +66,11 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
             byte[] value = reader.ReadBytes((int)valueLen);
             byte[] data = reader.ReadBytes((int)dataLen);
 
-            return new ModernBlock
-            {
-                Type = (BlockType)type,
-                Flags = flags,
-                Unknown = unk3,
-                Value = value,
-                Data = data,
-            };
+            Type = (BlockType)type;
+            Flags = flags;
+            Unknown = unk3;
+            Value = value;
+            Data = data;
         }
     }
 }

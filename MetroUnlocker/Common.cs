@@ -14,7 +14,7 @@ using MetroUnlocker.LibTSForge.SPP;
 // Common.cs
 namespace MetroUnlocker
 {
-    public enum PSVersion
+    public enum PhysicalStoreVersion
     {
         Win8Early,
         Win8,
@@ -33,7 +33,7 @@ namespace MetroUnlocker
     public static class Constants
     {
         public static readonly string ZeroCID = new string('0', 48);
-        public static readonly byte[] UniversalHWIDBlock =
+        public static readonly byte[] UniversalHardwareIdBlock =
         {
             0x26, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -146,8 +146,6 @@ namespace MetroUnlocker
                 throw new InvalidOperationException("Unable to access sppsvc: " + ex.Message);
             }
 
-            //Logger.WriteLine("Stopping sppsvc...");
-
             bool stopped = false;
 
             for (int i = 0; stopped == false && i < 60; i++)
@@ -174,19 +172,14 @@ namespace MetroUnlocker
 
             if (!stopped)
                 throw new System.TimeoutException("Failed to stop sppsvc");
-
-            //Logger.WriteLine("sppsvc stopped successfully.");
-
         }
 
-        public static PSVersion DetectVersion()
+        public static PhysicalStoreVersion DetectVersion()
         {
             int build = Environment.OSVersion.Version.Build;
 
-            if (build >= 9600) return PSVersion.WinModern;
-            //if (build >= 6000 && build <= 6003) return PSVersion.Vista;
-            //if (build >= 7600 && build <= 7602) return PSVersion.Win7;
-            if (build == 9200) return PSVersion.Win8;
+            if (build >= 9600) return PhysicalStoreVersion.WinModern;
+            if (build == 9200) return PhysicalStoreVersion.Win8;
 
             throw new NotSupportedException("This version of Windows is not supported. (build " + build + ")");
         }
@@ -196,15 +189,9 @@ namespace MetroUnlocker
             SLApi.RefreshLicenseStatus();
 
             using (RegistryKey wpaKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\WPA"))
-            {
                 foreach (string subKey in wpaKey.GetSubKeyNames())
-                {
                     if (subKey.StartsWith("8DEC0AF1") && subKey.EndsWith("-1"))
-                    {
                         return subKey.Contains("P");
-                    }
-                }
-            }
 
             throw new FileNotFoundException("Failed to autodetect key type, specify physical store key with /prod or /test arguments.");
         }
@@ -229,6 +216,10 @@ namespace MetroUnlocker
     {
         public string Name;
         public Dictionary<string, string> Data = new Dictionary<string, string>();
+
+        public TokenMeta() { }
+        public TokenMeta(string name) { Name = name; }
+        public TokenMeta(byte[] data) { Deserialize(data); }
 
         public byte[] Serialize()
         {
@@ -266,16 +257,6 @@ namespace MetroUnlocker
                 string value = reader.ReadNullTerminatedString(valueLen);
                 Data[key] = value;
             }
-        }
-
-        public TokenMeta(byte[] data)
-        {
-            Deserialize(data);
-        }
-
-        public TokenMeta()
-        {
-
         }
     }
 }

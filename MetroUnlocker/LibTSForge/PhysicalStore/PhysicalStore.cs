@@ -16,7 +16,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
         private byte[] PreHeaderBytes = new byte[] { };
         private readonly Dictionary<string, List<ModernBlock>> Data = new Dictionary<string, List<ModernBlock>>();
         private readonly FileStream TSFile;
-        private readonly PSVersion Version;
+        private readonly PhysicalStoreVersion Version;
         private readonly bool Production;
 
         public byte[] Serialize()
@@ -66,7 +66,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
 
                     for (int j = 0; j < numValues; j++)
                     {
-                        Data[keyName].Add(ModernBlock.Decode(reader));
+                        Data[keyName].Add(new ModernBlock(reader));
                         reader.Align(4);
                     }
                 }
@@ -75,12 +75,10 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
 
         public void AddBlock(ModernBlock block)
         {
-            if (!Data.ContainsKey(block.KeyAsStr))
-            {
-                Data[block.KeyAsStr] = new List<ModernBlock>();
-            }
+            if (!Data.ContainsKey(block.KeyAsString))
+                Data[block.KeyAsString] = new List<ModernBlock>();
 
-            Data[block.KeyAsStr].Add(new ModernBlock
+            Data[block.KeyAsString].Add(new ModernBlock
             {
                 Type = block.Type,
                 Flags = block.Flags,
@@ -104,7 +102,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
 
             foreach (ModernBlock block in blocks)
             {
-                if (block.ValueAsStr == value)
+                if (block.ValueAsString == value)
                 {
                     return new ModernBlock
                     {
@@ -126,7 +124,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
 
             foreach (ModernBlock block in blocks)
             {
-                if (block.ValueAsInt == value)
+                if (block.ValueAsInteger == value)
                 {
                     return new ModernBlock
                     {
@@ -150,7 +148,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
             {
                 ModernBlock block = blocks[i];
 
-                if (block.ValueAsStr == value)
+                if (block.ValueAsString == value)
                 {
                     block.Data = data;
                     blocks[i] = block;
@@ -169,7 +167,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
             {
                 ModernBlock block = blocks[i];
 
-                if (block.ValueAsInt == value)
+                if (block.ValueAsInteger == value)
                 {
                     block.Data = data;
                     blocks[i] = block;
@@ -208,7 +206,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
 
                 foreach (ModernBlock block in blocks)
                 {
-                    if (block.ValueAsStr == value)
+                    if (block.ValueAsString == value)
                     {
                         blocks.Remove(block);
                         break;
@@ -227,7 +225,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
 
                 foreach (ModernBlock block in blocks)
                 {
-                    if (block.ValueAsInt == value)
+                    if (block.ValueAsInteger == value)
                     {
                         blocks.Remove(block);
                         break;
@@ -245,7 +243,7 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
             return Path.Combine(Environment.ExpandEnvironmentVariables(sppRoot), "data.dat");
         }
 
-        public PhysicalStore(PSVersion version, bool production)
+        public PhysicalStore(PhysicalStoreVersion version, bool production)
         {
             Version = version;
             Production = production;

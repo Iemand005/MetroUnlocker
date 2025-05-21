@@ -10,21 +10,21 @@ namespace MetroUnlocker.LibTSForge.TokenStore
 
     public class TokenStore : IDisposable
     {
-        private static readonly uint VERSION = 3;
-        private static readonly int ENTRY_SIZE = 0x9E;
-        private static readonly int BLOCK_SIZE = 0x4020;
-        private static readonly int ENTRIES_PER_BLOCK = BLOCK_SIZE / ENTRY_SIZE;
-        private static readonly int BLOCK_PAD_SIZE = 0x66;
+        private static readonly uint Version = 3;
+        private static readonly int EntrySize = 0x9E;
+        private static readonly int BlockSize = 0x4020;
+        private static readonly int EntriesPerBlock = BlockSize / EntrySize;
+        private static readonly int BlockPadSize = 0x66;
 
-        private static readonly byte[] CONTS_HEADER = Enumerable.Repeat((byte)0x55, 0x20).ToArray();
-        private static readonly byte[] CONTS_FOOTER = Enumerable.Repeat((byte)0xAA, 0x20).ToArray();
+        private static readonly byte[] Header = Enumerable.Repeat((byte)0x55, 0x20).ToArray();
+        private static readonly byte[] Footer = Enumerable.Repeat((byte)0xAA, 0x20).ToArray();
 
         private List<TokenEntry> Entries = new List<TokenEntry>();
-        public FileStream TokensFile;
+        public FileStream TokensFile { get; set; }
 
         public void Deserialize()
         {
-            if (TokensFile.Length < BLOCK_SIZE) return;
+            if (TokensFile.Length < BlockSize) return;
 
             TokensFile.Seek(0x24, SeekOrigin.Begin);
             uint nextBlock = 0;
@@ -35,7 +35,7 @@ namespace MetroUnlocker.LibTSForge.TokenStore
                 uint curOffset = reader.ReadUInt32();
                 nextBlock = reader.ReadUInt32();
 
-                for (int i = 0; i < ENTRIES_PER_BLOCK; i++)
+                for (int i = 0; i < EntriesPerBlock; i++)
                 {
                     curOffset = reader.ReadUInt32();
                     bool populated = reader.ReadUInt32() == 1;
@@ -50,9 +50,7 @@ namespace MetroUnlocker.LibTSForge.TokenStore
                         uint dataLength = reader.ReadUInt32();
 
                         if (dataLength != contentLength)
-                        {
                             throw new FormatException("Data length in tokens content is inconsistent with entry.");
-                        }
 
                         reader.ReadBytes(0x20);
                         contentData = reader.ReadBytes((int)contentLength);
@@ -60,13 +58,7 @@ namespace MetroUnlocker.LibTSForge.TokenStore
 
                     reader.BaseStream.Seek(curOffset + 0x14, SeekOrigin.Begin);
 
-                    Entries.Add(new TokenEntry
-                    {
-                        Name = reader.ReadNullTerminatedString(0x82),
-                        Extension = reader.ReadNullTerminatedString(0x8),
-                        Data = contentData,
-                        Populated = populated
-                    });
+                    Entries.Add(new TokenEntry(reader.ReadNullTerminatedString(0x82), reader.ReadNullTerminatedString(0x8), contentData, populated));
                 }
 
                 reader.BaseStream.Seek(nextBlock, SeekOrigin.Begin);
@@ -79,31 +71,16 @@ namespace MetroUnlocker.LibTSForge.TokenStore
 
             using (BinaryWriter writer = new BinaryWriter(tokens))
             {
-                writer.Write(VERSION);
-                writer.Write(CONTS_HEADER);
+                writer.Write(Version);
+                writer.Write(Header);
 
                 int curBlockOffset = (int)writer.BaseStream.Position;
                 int curEntryOffset = curBlockOffset + 0x8;
-                int curContsOffset = curBlockOffset + BLOCK_SIZE;
+                int curContsOffset = curBlockOffset + BlockSize;
 
-                for (int eIndex = 0; eIndex < ((Entries.Count / ENTRIES_PER_BLOCK) + 1) * ENTRIES_PER_BLOCK; eIndex++)
+                for (int eIndex = 0; eIndex < ((Entries.Count / EntriesPerBlock) + 1) * EntriesPerBlock; eIndex++)
                 {
-                    TokenEntry entry;
-
-                    if (eIndex < Entries.Count)
-                    {
-                        entry = Entries[eIndex];
-                    }
-                    else
-                    {
-                        entry = new TokenEntry
-                        {
-                            Name = "",
-                            Extension = "",
-                            Populated = false,
-                            Data = new byte[] { }
-                        };
-                    }
+                    TokenEntry entry = eIndex < Entries.Count ? entry = Entries[eIndex] : new TokenEntry();
 
                     writer.BaseStream.Seek(curBlockOffset, SeekOrigin.Begin);
                     writer.Write(curBlockOffset);
@@ -122,15 +99,15 @@ namespace MetroUnlocker.LibTSForge.TokenStore
                     if (entry.Populated)
                     {
                         writer.BaseStream.Seek(curContsOffset, SeekOrigin.Begin);
-                        writer.Write(CONTS_HEADER);
+                        writer.Write(Header);
                         writer.Write(entry.Data.Length);
                         writer.Write(CryptoUtils.SHA256Hash(entry.Data));
                         writer.Write(entry.Data);
-                        writer.Write(CONTS_FOOTER);
+                        writer.Write(Footer);
                         curContsOffset = (int)writer.BaseStream.Position;
                     }
 
-                    if ((eIndex + 1) % ENTRIES_PER_BLOCK == 0 && eIndex != 0)
+                    if ((eIndex + 1) % EntriesPerBlock == 0 && eIndex != 0)
                     {
                         if (eIndex < Entries.Count)
                         {
@@ -139,21 +116,21 @@ namespace MetroUnlocker.LibTSForge.TokenStore
                         }
 
                         writer.BaseStream.Seek(curEntryOffset, SeekOrigin.Begin);
-                        writer.WritePadding(BLOCK_PAD_SIZE);
+                        writer.WritePadding(BlockPadSize);
 
                         writer.BaseStream.Seek(curBlockOffset, SeekOrigin.Begin);
                         byte[] blockHash;
-                        byte[] blockData = new byte[BLOCK_SIZE - 0x20];
+                        byte[] blockData = new byte[BlockSize - 0x20];
 
-                        tokens.Read(blockData, 0, BLOCK_SIZE - 0x20);
+                        tokens.Read(blockData, 0, BlockSize - 0x20);
                         blockHash = CryptoUtils.SHA256Hash(blockData);
 
-                        writer.BaseStream.Seek(curBlockOffset + BLOCK_SIZE - 0x20, SeekOrigin.Begin);
+                        writer.BaseStream.Seek(curBlockOffset + BlockSize - 0x20, SeekOrigin.Begin);
                         writer.Write(blockHash);
 
                         curBlockOffset = curContsOffset;
                         curEntryOffset = curBlockOffset + 0x8;
-                        curContsOffset = curBlockOffset + BLOCK_SIZE;
+                        curContsOffset = curBlockOffset + BlockSize;
                     }
                 }
 
@@ -190,71 +167,41 @@ namespace MetroUnlocker.LibTSForge.TokenStore
         public void DeleteEntry(string name, string ext)
         {
             foreach (TokenEntry entry in Entries)
-            {
                 if (entry.Name == name && entry.Extension == ext)
                 {
                     Entries.Remove(entry);
                     return;
                 }
-            }
         }
 
-        public void DeleteUnpopEntry(string name, string ext)
+        public void DeleteUnpopulatedEntry(string name, string extension)
         {
-            List<TokenEntry> delEntries = new List<TokenEntry>();
-            foreach (TokenEntry entry in Entries)
-            {
-                if (entry.Name == name && entry.Extension == ext && !entry.Populated)
-                {
-                    delEntries.Add(entry);
-                }
-            }
-
-            Entries = Entries.Except(delEntries).ToList();
+            Entries = Entries.FindAll(entry => entry.Name != name && entry.Extension != extension && entry.Populated);
         }
 
         public TokenEntry GetEntry(string name, string ext)
         {
             foreach (TokenEntry entry in Entries)
-            {
                 if (entry.Name == name && entry.Extension == ext)
-                {
-                    if (!entry.Populated) continue;
-                    return entry;
-                }
-            }
-
+                    if (entry.Populated) return entry;
             return null;
         }
 
         public TokenMeta GetMetaEntry(string name)
         {
-            DeleteUnpopEntry(name, "xml");
+            DeleteUnpopulatedEntry(name, "xml");
             TokenEntry entry = GetEntry(name, "xml");
-            TokenMeta meta;
 
-            if (entry == null)
-            {
-                meta = new TokenMeta
-                {
-                    Name = name
-                };
-            }
-            else
-            {
-                meta = new TokenMeta(entry.Data);
-            }
-
-            return meta;
+            return entry == null ? new TokenMeta(name) : new TokenMeta(entry.Data);
         }
 
-        public void SetEntry(string name, string ext, byte[] data)
+        public void SetEntry(string name, string extension, byte[] data)
         {
             for (int i = 0; i < Entries.Count; i++)
             {
                 TokenEntry entry = Entries[i];
 
-                if (entry.Name == name && entry.Extension == ext && entry.Populated)
+                if (entry.Name == name && entry.Extension == extension && entry.Populated)
                 {
                     entry.Data = data;
                     Entries[i] = entry;
@@ -262,13 +209,7 @@ namespace MetroUnlocker.LibTSForge.TokenStore
                 }
             }
 
-            Entries.Add(new TokenEntry
-            {
-                Populated = true,
-                Name = name,
-                Extension = ext,
-                Data = data
-            });
+            Entries.Add(new TokenEntry(name, extension, data));
         }
 
         public static string GetPath()

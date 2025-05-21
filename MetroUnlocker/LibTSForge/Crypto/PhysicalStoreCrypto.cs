@@ -12,7 +12,7 @@ namespace MetroUnlocker.LibTSForge.Crypto
     {
         public static byte[] DecryptPhysicalStore(byte[] data, bool production)
         {
-            byte[] rsaKey = production ? Keys.PRODUCTION : Keys.TEST;
+            byte[] rsaKey = production ? Keys.Production : Keys.Test;
             BinaryReader br = new BinaryReader(new MemoryStream(data));
             br.BaseStream.Seek(0x10, SeekOrigin.Begin);
             byte[] aesKeySig = br.ReadBytes(0x80);
@@ -33,16 +33,16 @@ namespace MetroUnlocker.LibTSForge.Crypto
             return psData;
         }
 
-        public static byte[] EncryptPhysicalStore(byte[] data, bool production, PSVersion version)
+        public static byte[] EncryptPhysicalStore(byte[] data, bool production, PhysicalStoreVersion version)
         {
-            Dictionary<PSVersion, int> versionTable = new Dictionary<PSVersion, int>
+            Dictionary<PhysicalStoreVersion, int> versionTable = new Dictionary<PhysicalStoreVersion, int>
             {
-                {PSVersion.Win8, 1},
-                {PSVersion.WinBlue, 2},
-                {PSVersion.WinModern, 3}
+                {PhysicalStoreVersion.Win8, 1},
+                {PhysicalStoreVersion.WinBlue, 2},
+                {PhysicalStoreVersion.WinModern, 3}
             };
 
-            byte[] rsaKey = production ? Keys.PRODUCTION : Keys.TEST;
+            byte[] rsaKey = production ? Keys.Production : Keys.Test;
 
             byte[] aesKey = Encoding.UTF8.GetBytes("Boop Foxyz nose!");
             byte[] hmacKey = CryptoUtils.GenerateRandomKey(0x10);

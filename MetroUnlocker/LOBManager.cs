@@ -5,12 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-using MetroUnlocker.ProductPolicy;
 using MetroUnlocker;
-using MetroUnlocker.LibTSForge.PhysicalStore;
+using MetroUnlocker.LibTSForge.SPP;
 using MetroUnlocker.LibTSForge.Modifiers;
 using MetroUnlocker.LibTSForge.TokenStore;
-using MetroUnlocker.LibTSForge.SPP;
+using MetroUnlocker.LibTSForge.PhysicalStore;
 
 namespace MetroUnlocker
 {
@@ -22,19 +21,25 @@ namespace MetroUnlocker
 
         public static void ActivateZeroCID()
         {
-            PSVersion version = Utils.DetectVersion();
+            PhysicalStoreVersion version = Utils.DetectVersion();
             bool production = Utils.DetectCurrentKey();
 
             if (Backup) BackupPhysicalStore();
 
-            GenPKeyInstall.InstallGenPKey(version, production, ActivationId);
+            ProductKeyInstaller.InstallGeneratedProductKey(version, production, ActivationId);
 
             ZeroCID.Activate(version, production, ActivationId);
         }
 
         public static Guid GetInstalledSideloadingKeyId()
         {
-            return SLApi.GetInstalledPkeyId(ActivationId);
+            return SLApi.GetInstalledProductKeyId(ActivationId);
+        }
+
+        public static bool IsSideloadingKeyInstalled()
+        {
+            Guid sideloadingKeyId;
+            return IsSideloadingKeyInstalled(out sideloadingKeyId);
         }
 
         public static bool IsSideloadingKeyInstalled(out Guid sideloadingKeyId)
@@ -79,29 +84,6 @@ namespace MetroUnlocker
             physicalStore = TokenStore.GetPath();
 
             File.Copy(physicalStore, GetUniqueFileName(backupFileName), false);
-        }
-
-        public static bool SetPolicyState(PolicyState state)
-        {
-            ProductPolicyEditor policyEditor = new ProductPolicyEditor();
-            policyEditor.SetPolicyStateByName("WSLicensingService-LOBSideloadingActivated", state);
-            return policyEditor.Save();
-        }
-
-        public static bool Enable()
-        {
-            return SetPolicyState(PolicyState.Enabled);
-        }
-
-        public static bool Disable()
-        {
-            return SetPolicyState(PolicyState.Disabled);
-        }
-
-        public static bool IsSideloadingKeyInstalled()
-        {
-            Guid sideloadingKeyId;
-            return IsSideloadingKeyInstalled(out sideloadingKeyId);
         }
     }
 }
