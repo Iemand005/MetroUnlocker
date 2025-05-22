@@ -67,7 +67,8 @@
     <Compile Include="LibTSForge\PhysicalStore\ModernBlock.cs" />
     <Compile Include="LibTSForge\PhysicalStore\PhysicalStore.cs" />
     <Compile Include="LibTSForge\PhysicalStore\VariableBag.cs" />
-    <Compile Include="LibTSForge\SPP\PKeyConfig.cs" />
+    <Compile Include="LibTSForge\SPP\NativeMethods.cs" />
+    <Compile Include="LibTSForge\SPP\ProductKeyConfig.cs" />
     <Compile Include="LibTSForge\SPP\ProductKey.cs" />
     <Compile Include="LibTSForge\SPP\SLApi.cs" />
     <Compile Include="LibTSForge\TokenStore\TokenEntry.cs" />

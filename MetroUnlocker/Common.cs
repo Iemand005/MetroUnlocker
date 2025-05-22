@@ -45,9 +45,6 @@ namespace MetroUnlocker
 
     public static class Utils
     {
-        [DllImport("kernel32.dll")]
-        public static extern uint GetSystemDefaultLCID();
-
         public static string GetArchitecture()
         {
             string arch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE", EnvironmentVariableTarget.Machine).ToUpperInvariant();

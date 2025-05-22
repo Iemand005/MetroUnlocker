@@ -3,142 +3,42 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace MetroUnlocker.LibTSForge.SPP
 {
     public static class SLApi
     {
-        private enum SLIDType
-        {
-            SLIDApplication,
-            SLIDProductSku,
-            SLIDLicenseFile,
-            SLIDLicense,
-            SL_ID_PKEY,
-            SL_ID_ALL_LICENSES,
-            SL_ID_ALL_LICENSE_FILES,
-            SL_ID_STORE_TOKEN,
-            SL_ID_LAST
-        }
-
-        private enum SLDataType
-        {
-            SL_DATA_NONE,
-            SL_DATA_SZ,
-            SL_DATA_DWORD,
-            SL_DATA_BINARY,
-            SL_DATA_MULTI_SZ,
-            SL_DATA_SUM
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct SLLicensingStatus
-        {
-            public Guid SkuId;
-            public uint eStatus;
-            public uint dwGraceTime;
-            public uint dwTotalGraceDays;
-            public uint hrReason;
-            public ulong qwValidityExpiration;
-        }
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
-        private static extern void SLOpen(out IntPtr hSLC);
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
-        private static extern void SLClose(IntPtr hSLC);
-
-        [DllImport("slc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetWindowsInformationDWORD(string ValueName, ref int Value);
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLInstallProofOfPurchase(IntPtr hSLC, string pwszPKeyAlgorithm, string pwszPKeyString, uint cbPKeySpecificData, byte[] pbPKeySpecificData, ref Guid PKeyId);
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLUninstallProofOfPurchase(IntPtr hSLC, ref Guid PKeyId);
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetPKeyInformation(IntPtr hSLC, ref Guid pPKeyId, string pwszValueName, out SLDataType peDataType, out uint pcbValue, out IntPtr ppbValue);
-
-        [DllImport("sppcext.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLActivateProduct(IntPtr hSLC, ref Guid pProductSkuId, byte[] cbAppSpecificData, byte[] pvAppSpecificData, byte[] pActivationInfo, string pwszProxyServer, ushort wProxyPort);
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGenerateOfflineInstallationId(IntPtr hSLC, ref Guid pProductSkuId, ref string ppwszInstallationId);
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLDepositOfflineConfirmationId(IntPtr hSLC, ref Guid pProductSkuId, string pwszInstallationId, string pwszConfirmationId);
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetSLIDList(IntPtr hSLC, SLIDType eQueryIdType, ref Guid pQueryId, SLIDType eReturnIdType, out uint pnReturnIds, out IntPtr ppReturnIds);
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
-        private static extern void SLGetLicensingStatusInformation(IntPtr hSLC, ref Guid pAppID, IntPtr pProductSkuId, string pwszRightName, out uint pnStatusCount, out IntPtr ppLicensingStatus);
-
-        [DllImport("sppc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetInstalledProductKeyIds(IntPtr hSLC, ref Guid pProductSkuId, out uint pnProductKeyIds, out IntPtr ppProductKeyIds);
-
-        [DllImport("slc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLConsumeWindowsRight(uint unknown);
-
-        [DllImport("slc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetProductSkuInformation(IntPtr hSLC, ref Guid pProductSkuId, string pwszValueName, out SLDataType peDataType, out uint pcbValue, out IntPtr ppbValue);
-
-        [DllImport("slc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetProductSkuInformation(IntPtr hSLC, ref Guid pProductSkuId, string pwszValueName, IntPtr peDataType, out uint pcbValue, out IntPtr ppbValue);
-
-        [DllImport("slc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLGetLicense(IntPtr hSLC, ref Guid pLicenseFileId, out uint pcbLicenseFile, out IntPtr ppbLicenseFile);
-
-        [DllImport("slc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLSetCurrentProductKey(IntPtr hSLC, ref Guid pProductSkuId, ref Guid pProductKeyId);
-
-        [DllImport("slc.dll", CharSet = CharSet.Unicode)]
-        private static extern uint SLFireEvent(IntPtr hSLC, string pwszEventId, ref Guid pApplicationId);
-
         public class SLContext : IDisposable
         {
             public readonly IntPtr Handle;
 
-            public SLContext()
-            {
-                SLOpen(out Handle);
-            }
+            public SLContext() { NativeMethods.SLOpen(out Handle); }
 
             public void Dispose()
             {
-                SLClose(Handle);
+                NativeMethods.SLClose(Handle);
                 GC.SuppressFinalize(this);
             }
 
-            ~SLContext()
-            {
-                Dispose();
-            }
+            ~SLContext() { Dispose(); }
         }
 
-        public static Guid GetPkeyConfigFileId(Guid actId)
+        public static Guid GetProductKeyConfigFileId(Guid activationId)
         {
             using (SLContext sl = new SLContext())
             {
                 SLDataType type;
-                uint len;
-                IntPtr ppReturnLics;
+                uint length;
+                IntPtr fileIdPointer;
 
-                uint status = SLGetProductSkuInformation(sl.Handle, ref actId, "pkeyConfigLicenseId", out type, out len, out ppReturnLics);
+                uint status = NativeMethods.SLGetProductSkuInformation(sl.Handle, ref activationId, "pkeyConfigLicenseId", out type, out length, out fileIdPointer);
 
-                if (status != 0 || len == 0)
-                {
+                if (status != 0 || length == 0)
                     return Guid.Empty;
-                }
 
-                Guid pkcId = new Guid(Marshal.PtrToStringAuto(ppReturnLics));
-                return GetLicenseFileId(pkcId);
+                Guid configLicenseId = new Guid(Marshal.PtrToStringAuto(fileIdPointer));
+                return GetLicenseFileId(configLicenseId);
             }
         }
 
@@ -150,9 +50,9 @@ namespace MetroUnlocker.LibTSForge.SPP
                 uint count;
                 IntPtr returnLicenses;
 
-                status = SLGetSLIDList(sl.Handle, SLIDType.SLIDLicense, ref licenseId, SLIDType.SLIDLicenseFile, out count, out returnLicenses);
+                status = NativeMethods.SLGetSLIDList(sl.Handle, SLIDType.License, ref licenseId, SLIDType.LicenseFile, out count, out returnLicenses);
 
-                return (status == 0 && count != 0) ? (Guid)Marshal.PtrToStructure(returnLicenses, typeof(Guid)) : Guid.Empty;//new Guid(Marshal.PtrToStringAuto(returnLicenses));
+                return (status == 0 && count != 0) ? (Guid)Marshal.PtrToStructure(returnLicenses, typeof(Guid)) : Guid.Empty;
             }
         }
 
@@ -162,14 +62,14 @@ namespace MetroUnlocker.LibTSForge.SPP
 
             using (SLContext sl = new SLContext())
             {
-                uint dataLen;
-                IntPtr dataPtr;
+                uint length;
+                IntPtr dataPointer;
 
-                if (SLGetLicense(sl.Handle, ref fileId, out dataLen, out dataPtr) != 0)
+                if (NativeMethods.SLGetLicense(sl.Handle, ref fileId, out length, out dataPointer) != 0)
                     return null;
 
-                byte[] data = new byte[dataLen];
-                Marshal.Copy(dataPtr, data, 0, (int)dataLen);
+                byte[] data = new byte[length];
+                Marshal.Copy(dataPointer, data, 0, (int)length);
 
                 data = data.Skip(Array.IndexOf(data, (byte)'<')).ToArray();
                 return Encoding.UTF8.GetString(data);
@@ -184,9 +84,9 @@ namespace MetroUnlocker.LibTSForge.SPP
                 SLDataType type;
                 IntPtr binaryValue;
 
-                uint status = SLGetProductSkuInformation(sl.Handle, ref productSkuId, value, out type, out length, out binaryValue);
+                uint status = NativeMethods.SLGetProductSkuInformation(sl.Handle, ref productSkuId, value, out type, out length, out binaryValue);
 
-                if (status != 0 || length == 0 || type != SLDataType.SL_DATA_SZ)
+                if (status != 0 || length == 0 || type != SLDataType.String)
                     return null;
 
                 return Marshal.PtrToStringAuto(binaryValue);
@@ -198,7 +98,7 @@ namespace MetroUnlocker.LibTSForge.SPP
             using (SLContext sl = new SLContext())
             {
                 string installationId = null;
-                var status = SLGenerateOfflineInstallationId(sl.Handle, ref actId, ref installationId);
+                var status = NativeMethods.SLGenerateOfflineInstallationId(sl.Handle, ref actId, ref installationId);
 
                 if (status != 0)
                     throw new Exception(string.Format("Failed to get installation ID: 0x{0}. Your data.dat is probably corrupt at the moment. Try again later.", status.ToString("X")));
@@ -215,7 +115,7 @@ namespace MetroUnlocker.LibTSForge.SPP
                 uint count;
                 IntPtr productKeyIds;
 
-                status = SLGetInstalledProductKeyIds(sl.Handle, ref actId, out count, out productKeyIds);
+                status = NativeMethods.SLGetInstalledProductKeyIds(sl.Handle, ref actId, out count, out productKeyIds);
 
                 return (status == 0 && count != 0) ? (Guid)Marshal.PtrToStructure(productKeyIds, typeof(Guid)) : Guid.Empty;
             }
@@ -224,12 +124,12 @@ namespace MetroUnlocker.LibTSForge.SPP
         public static uint DepositConfirmationId(Guid actId, string installationId, string confirmationId)
         {
             using (SLContext sl = new SLContext())
-                return SLDepositOfflineConfirmationId(sl.Handle, ref actId, installationId, confirmationId);
+                return NativeMethods.SLDepositOfflineConfirmationId(sl.Handle, ref actId, installationId, confirmationId);
         }
 
         public static void RefreshLicenseStatus()
         {
-            SLConsumeWindowsRight(0);
+            NativeMethods.SLConsumeWindowsRight(0);
         }
 
         public static bool RefreshTrustedTime(Guid actId)
@@ -240,7 +140,7 @@ namespace MetroUnlocker.LibTSForge.SPP
                 uint count;
                 IntPtr ppbValue;
 
-                uint status = SLGetProductSkuInformation(sl.Handle, ref actId, "TrustedTime", out type, out count, out ppbValue);
+                uint status = NativeMethods.SLGetProductSkuInformation(sl.Handle, ref actId, "TrustedTime", out type, out count, out ppbValue);
                 return (int)status >= 0 && status != 0xC004F012;
             }
         }
@@ -248,22 +148,22 @@ namespace MetroUnlocker.LibTSForge.SPP
         public static void FireStateChangedEvent(Guid appId)
         {
             using (SLContext sl = new SLContext())
-                SLFireEvent(sl.Handle, "msft:rm/event/licensingstatechanged", ref appId);
+                NativeMethods.SLFireEvent(sl.Handle, "msft:rm/event/licensingstatechanged", ref appId);
         }
 
-        public static Guid GetAppId(Guid actId)
+        public static Guid GetAppId(Guid activationId)
         {
             using (SLContext sl = new SLContext())
             {
                 uint count;
-                IntPtr pAppIds;
+                IntPtr appIdPointer;
 
-                uint status = SLGetSLIDList(sl.Handle, SLIDType.SLIDProductSku, ref actId, SLIDType.SLIDApplication, out count, out pAppIds);
+                uint status = NativeMethods.SLGetSLIDList(sl.Handle, SLIDType.ProductSku, ref activationId, SLIDType.Application, out count, out appIdPointer);
 
                 if (status != 0 || count == 0)
                     return Guid.Empty;
 
-                return (Guid)Marshal.PtrToStructure(pAppIds, typeof(Guid));
+                return (Guid)Marshal.PtrToStructure(appIdPointer, typeof(Guid));
             }
         }
 
@@ -275,7 +175,7 @@ namespace MetroUnlocker.LibTSForge.SPP
                 SLDataType type;
                 IntPtr ppbValue;
 
-                uint status = SLGetProductSkuInformation(sl.Handle, ref actId, "DependsOn", out type, out count, out ppbValue);
+                uint status = NativeMethods.SLGetProductSkuInformation(sl.Handle, ref actId, "DependsOn", out type, out count, out ppbValue);
                 return (int)status >= 0 && status != 0xC004F012;
             }
         }
@@ -284,15 +184,15 @@ namespace MetroUnlocker.LibTSForge.SPP
         {
             using (SLContext sl = new SLContext())
             {
-                Guid pkeyId = Guid.Empty;
-                return SLInstallProofOfPurchase(sl.Handle, pkey.GetAlgoUri(), pkey.ToString(), 0, null, ref pkeyId);
+                Guid productKeyId = Guid.Empty;
+                return NativeMethods.SLInstallProofOfPurchase(sl.Handle, pkey.GetAlgoUri(), pkey.ToString(), 0, null, ref productKeyId);
             }
         }
 
-        public static uint UninstallProductKey(Guid pkeyId)
+        public static uint UninstallProductKey(Guid productKeyId)
         {
             using (SLContext sl = new SLContext())
-                return SLUninstallProofOfPurchase(sl.Handle, ref pkeyId);
+                return NativeMethods.SLUninstallProofOfPurchase(sl.Handle, ref productKeyId);
         }
     }
 }

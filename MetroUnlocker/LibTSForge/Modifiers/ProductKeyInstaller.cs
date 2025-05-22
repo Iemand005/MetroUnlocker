@@ -22,7 +22,7 @@ namespace MetroUnlocker.LibTSForge.Modifiers
             Guid instPkeyId = SLApi.GetInstalledProductKeyId(actId);
             if (instPkeyId != Guid.Empty) SLApi.UninstallProductKey(instPkeyId);
 
-            if (pkey.Algorithm != PKeyAlgorithm.PKEY2009)
+            if (pkey.Algorithm != ProductKeyAlgorithm.ProductKey2009)
                 throw new Exception("The key algorithm isn't 2009");
             
             uint status = SLApi.InstallProductKey(pkey);

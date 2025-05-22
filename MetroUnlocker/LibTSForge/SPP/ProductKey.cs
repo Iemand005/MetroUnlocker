@@ -22,7 +22,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         public int Serial;
         public ulong Security;
         public bool Upgrade;
-        public PKeyAlgorithm Algorithm;
+        public ProductKeyAlgorithm Algorithm;
         public string EulaType;
         public string PartNumber;
         public string Edition;
@@ -37,7 +37,7 @@ namespace MetroUnlocker.LibTSForge.SPP
             get { return BitConverter.GetBytes(klow).Concat(BitConverter.GetBytes(khigh)).ToArray(); }
         }
 
-        public ProductKey(int serial, ulong security, bool upgrade, PKeyAlgorithm algorithm, ProductConfig config, KeyRange range)
+        public ProductKey(int serial, ulong security, bool upgrade, ProductKeyAlgorithm algorithm, ProductConfig config, KeyRange range)
         {
             Group = config.GroupId;
             Serial = serial;
@@ -60,7 +60,7 @@ namespace MetroUnlocker.LibTSForge.SPP
 
         public string GetAlgoUri()
         {
-            return "msft:rm/algorithm/pkey/" + (Algorithm == PKeyAlgorithm.PKEY2005 ? "2005" : (Algorithm == PKeyAlgorithm.PKEY2009 ? "2009" : "Unknown"));
+            return "msft:rm/algorithm/pkey/" + (Algorithm == ProductKeyAlgorithm.ProductKey2005 ? "2005" : (Algorithm == ProductKeyAlgorithm.ProductKey2009 ? "2009" : "Unknown"));
         }
 
         public Guid GetPkeyId()
@@ -137,7 +137,7 @@ namespace MetroUnlocker.LibTSForge.SPP
 
             pid2 = "";
 
-            if (Algorithm == PKeyAlgorithm.PKEY2005)
+            if (Algorithm == ProductKeyAlgorithm.ProductKey2005)
             {
                 string mpc = GetMPC();
                 string serialHigh;
@@ -211,7 +211,7 @@ namespace MetroUnlocker.LibTSForge.SPP
             int serialHigh = Serial / 1000000;
             int serialLow = Serial % 1000000;
             int licenseType;
-            uint lcid = Utils.GetSystemDefaultLCID();
+            uint lcid = NativeMethods.GetSystemDefaultLCID();
             int build = Environment.OSVersion.Version.Build;
             int dayOfYear = DateTime.Now.DayOfYear;
             int year = DateTime.Now.Year;
@@ -266,7 +266,7 @@ namespace MetroUnlocker.LibTSForge.SPP
             string keyStr = "";
             Random rnd = new Random(Group * 1000000000 + Serial);
 
-            if (Algorithm == PKeyAlgorithm.PKEY2005)
+            if (Algorithm == ProductKeyAlgorithm.ProductKey2005)
             {
                 keyStr = "H4X3DH4X3DH4X3DH4X3D";
 
@@ -275,7 +275,7 @@ namespace MetroUnlocker.LibTSForge.SPP
                     keyStr += ALPHABET[rnd.Next(24)];
                 }
             }
-            else if (Algorithm == PKeyAlgorithm.PKEY2009)
+            else if (Algorithm == ProductKeyAlgorithm.ProductKey2009)
             {
                 int last = 0;
                 byte[] bKey = KeyBytes;

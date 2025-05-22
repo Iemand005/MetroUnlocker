@@ -5,6 +5,11 @@ VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetroUnlocker", "MetroUnlocker\MetroUnlocker.csproj", "{D27EB145-0B58-43AD-BB94-BE000D236D38}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C9C14067-F9A1-4D85-A1D2-162E91B71CC3}"
+	ProjectSection(SolutionItems) = preProject
+		DependencyGraph.dgml = DependencyGraph.dgml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -6,13 +6,13 @@ namespace MetroUnlocker.LibTSForge.Crypto
 {
     public static class CryptoUtils
     {
-        public static byte[] GenerateRandomKey(int len)
+        public static byte[] GenerateRandomKey(int length)
         {
-            byte[] rand = new byte[len];
-            Random r = new Random();
-            r.NextBytes(rand);
+            byte[] randomKey = new byte[length];
+            Random random = new Random();
+            random.NextBytes(randomKey);
 
-            return rand;
+            return randomKey;
         }
 
         public static byte[] AESEncrypt(byte[] data, byte[] key)

@@ -17,38 +17,38 @@ namespace MetroUnlocker
 {
     public partial class App : Form
     {
-        public const string AppxKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Appx";
+        public const string AppxRegistryKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Appx";
 
-        string trustedAppsPolicyName = "AllowAllTrustedApps";
-        string developmentPolicyName = "AllowDevelopmentWithoutDevLicense";
-        string specialProfilesPolicyName = "AllowDeploymentInSpecialProfiles";
+        string TrustedAppsPolicyName = "AllowAllTrustedApps";
+        string DevelopmentPolicyName = "AllowDevelopmentWithoutDevLicense";
+        string SpecialProfilesPolicyName = "AllowDeploymentInSpecialProfiles";
 
         public bool LOBEnabled
         {
-            get { return GetGroupPolicy(trustedAppsPolicyName); }
-            set { SetGroupPolicy(trustedAppsPolicyName, value); }
+            get { return GetGroupPolicy(TrustedAppsPolicyName); }
+            set { SetGroupPolicy(TrustedAppsPolicyName, value); }
         }
 
         public bool DevelopmentEnabled
         {
-            get { return GetGroupPolicy(developmentPolicyName); }
-            set { SetGroupPolicy(developmentPolicyName, value); }
+            get { return GetGroupPolicy(DevelopmentPolicyName); }
+            set { SetGroupPolicy(DevelopmentPolicyName, value); }
         }
 
         public bool SpecialProfilesEnabled
         {
-            get { return GetGroupPolicy(specialProfilesPolicyName); }
-            set { SetGroupPolicy(specialProfilesPolicyName, value); }
+            get { return GetGroupPolicy(SpecialProfilesPolicyName); }
+            set { SetGroupPolicy(SpecialProfilesPolicyName, value); }
         }
 
         public void SetGroupPolicy(string policyName, bool enabled)
         {
-            Registry.SetValue(AppxKey, policyName, enabled ? 1 : 0, RegistryValueKind.DWord);
+            Registry.SetValue(AppxRegistryKey, policyName, enabled ? 1 : 0, RegistryValueKind.DWord);
         }
 
         public bool GetGroupPolicy(string policyName)
         {
-            object value = Registry.GetValue(AppxKey, policyName, 0);
+            object value = Registry.GetValue(AppxRegistryKey, policyName, 0);
             return value is int ? (int)value == 1 : false;
         }
 

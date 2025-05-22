@@ -90,92 +90,33 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
 
         public void AddBlocks(IEnumerable<ModernBlock> blocks)
         {
-            foreach (ModernBlock block in blocks)
-            {
-                AddBlock(block);
-            }
+            foreach (ModernBlock block in blocks) AddBlock(block);
         }
 
         public ModernBlock GetBlock(string key, string value)
         {
-            List<ModernBlock> blocks = Data[key];
-
-            foreach (ModernBlock block in blocks)
-            {
-                if (block.ValueAsString == value)
-                {
-                    return new ModernBlock
-                    {
-                        Type = block.Type,
-                        Flags = block.Flags,
-                        Key = Utils.EncodeString(key),
-                        Value = block.Value,
-                        Data = block.Data
-                    };
-                }
-            }
-
-            return null;
+            if (!Data.ContainsKey(key)) return null;
+            return Data[key].Find(block => block.ValueAsString == value);
         }
 
         public ModernBlock GetBlock(string key, uint value)
         {
-            List<ModernBlock> blocks = Data[key];
-
-            foreach (ModernBlock block in blocks)
-            {
-                if (block.ValueAsInteger == value)
-                {
-                    return new ModernBlock
-                    {
-                        Type = block.Type,
-                        Flags = block.Flags,
-                        Key = Utils.EncodeString(key),
-                        Value = block.Value,
-                        Data = block.Data
-                    };
-                }
-            }
-
-            return null;
+            if (!Data.ContainsKey(key)) return null;
+            return Data[key].Find(block => block.ValueAsInteger == value);
         }
 
         public void SetBlock(string key, string value, byte[] data)
         {
-            List<ModernBlock> blocks = Data[key];
-
-            for (int i = 0; i < blocks.Count; i++)
-            {
-                ModernBlock block = blocks[i];
-
-                if (block.ValueAsString == value)
-                {
-                    block.Data = data;
-                    blocks[i] = block;
-                    break;
-                }
-            }
-
-            Data[key] = blocks;
+            if (!Data.ContainsKey(key)) return;
+            int index = Data[key].FindIndex(block => block.ValueAsString == value);
+            Data[key][index].Data = data;
         }
 
         public void SetBlock(string key, uint value, byte[] data)
         {
-            List<ModernBlock> blocks = Data[key];
-
-            for (int i = 0; i < blocks.Count; i++)
-            {
-                ModernBlock block = blocks[i];
-
-                if (block.ValueAsInteger == value)
-                {
-                    block.Data = data;
-                    blocks[i] = block;
-                    break;
-                }
-            }
-
-            Data[key] = blocks;
+            if (!Data.ContainsKey(key)) return;
+            int index = Data[key].FindIndex(block => block.ValueAsInteger == value);
+            Data[key][index].Data = data;
         }
 
         public void SetBlock(string key, string value, string data)
@@ -200,40 +141,12 @@ namespace MetroUnlocker.LibTSForge.PhysicalStore
 
         public void DeleteBlock(string key, string value)
         {
-            if (Data.ContainsKey(key))
-            {
-                List<ModernBlock> blocks = Data[key];
-
-                foreach (ModernBlock block in blocks)
-                {
-                    if (block.ValueAsString == value)
-                    {
-                        blocks.Remove(block);
-                        break;
-                    }
-                }
-
-                Data[key] = blocks;
-            }
+            Data[key].Remove(GetBlock(key, value));
         }
 
         public void DeleteBlock(string key, uint value)
         {
-            if (Data.ContainsKey(key))
-            {
-                List<ModernBlock> blocks = Data[key];
-
-                foreach (ModernBlock block in blocks)
-                {
-                    if (block.ValueAsInteger == value)
-                    {
-                        blocks.Remove(block);
-                        break;
-                    }
-                }
-
-                Data[key] = blocks;
-            }
+            Data[key].Remove(GetBlock(key, value));
         }
 
         public static string GetPath()

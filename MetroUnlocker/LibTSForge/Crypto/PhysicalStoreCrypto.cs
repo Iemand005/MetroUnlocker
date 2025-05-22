@@ -47,19 +47,19 @@ namespace MetroUnlocker.LibTSForge.Crypto
             byte[] aesKey = Encoding.UTF8.GetBytes("Boop Foxyz nose!");
             byte[] hmacKey = CryptoUtils.GenerateRandomKey(0x10);
 
-            byte[] encAesKey = CryptoUtils.RSAEncrypt(rsaKey, aesKey);
-            byte[] aesKeySig = CryptoUtils.RSASign(rsaKey, encAesKey);
-            byte[] hmacSig = CryptoUtils.HMACSign(hmacKey, data);
+            byte[] encryptedAesKey = CryptoUtils.RSAEncrypt(rsaKey, aesKey);
+            byte[] aesKeySignature = CryptoUtils.RSASign(rsaKey, encryptedAesKey);
+            byte[] hmacSignature = CryptoUtils.HMACSign(hmacKey, data);
 
             byte[] decData = new byte[] { };
-            decData = decData.Concat(hmacKey).Concat(hmacSig).Concat(BitConverter.GetBytes(0)).Concat(data).ToArray();
+            decData = decData.Concat(hmacKey).Concat(hmacSignature).Concat(BitConverter.GetBytes(0)).Concat(data).ToArray();
             byte[] encData = CryptoUtils.AESEncrypt(decData, aesKey);
 
             BinaryWriter bw = new BinaryWriter(new MemoryStream());
             bw.Write(versionTable[version]);
             bw.Write(Encoding.UTF8.GetBytes("UNTRUSTSTORE"));
-            bw.Write(aesKeySig);
-            bw.Write(encAesKey);
+            bw.Write(aesKeySignature);
+            bw.Write(encryptedAesKey);
             bw.Write(encData);
 
             return bw.GetBytes();

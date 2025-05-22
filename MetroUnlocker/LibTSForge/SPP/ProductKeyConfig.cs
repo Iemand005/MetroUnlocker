@@ -9,10 +9,10 @@ using System.Xml;
 namespace MetroUnlocker.LibTSForge.SPP
 {
 
-    public enum PKeyAlgorithm
+    public enum ProductKeyAlgorithm
     {
-        PKEY2005,
-        PKEY2009
+        ProductKey2005,
+        ProductKey2009
     }
 
     public class KeyRange
@@ -23,10 +23,7 @@ namespace MetroUnlocker.LibTSForge.SPP
         public string PartNumber;
         public bool Valid;
 
-        public bool Contains(int n)
-        {
-            return Start <= n && End <= n;
-        }
+        public bool Contains(int n) { return Start <= n && End <= n; }
     }
 
     public class ProductConfig
@@ -36,39 +33,33 @@ namespace MetroUnlocker.LibTSForge.SPP
         public string Description;
         public string Channel;
         public bool Randomized;
-        public PKeyAlgorithm Algorithm;
+        public ProductKeyAlgorithm Algorithm;
         public List<KeyRange> Ranges;
         public Guid ActivationId;
 
-        private List<KeyRange> GetPkeyRanges()
+        private List<KeyRange> GetProductKeyRanges()
         {
             if (Ranges.Count == 0)
-            {
                 throw new ArgumentException("No key ranges.");
-            }
 
-            if (Algorithm == PKeyAlgorithm.PKEY2005)
-            {
+            if (Algorithm == ProductKeyAlgorithm.ProductKey2005)
                 return Ranges;
-            }
 
-            List<KeyRange> FilteredRanges = Ranges.Where(r => !r.EulaType.Contains("WAU")).ToList();
+            List<KeyRange> FilteredRanges = Ranges.FindAll(r => !r.EulaType.Contains("WAU"));
 
             if (FilteredRanges.Count == 0)
-            {
                 throw new NotSupportedException("Specified Activation ID is usable only for Windows Anytime Upgrade. Please use a non-WAU Activation ID instead.");
-            }
-
+            
             return FilteredRanges;
         }
 
         public ProductKey GetRandomKey()
         {
-            List<KeyRange> KeyRanges = GetPkeyRanges();
-            Random rnd = new Random();
+            List<KeyRange> KeyRanges = GetProductKeyRanges();
+            Random random = new Random();
 
-            KeyRange range = KeyRanges[rnd.Next(KeyRanges.Count)];
-            int serial = rnd.Next(range.Start, range.End);
+            KeyRange range = KeyRanges[random.Next(KeyRanges.Count)];
+            int serial = random.Next(range.Start, range.End);
 
             return new ProductKey(serial, 0, false, Algorithm, this, range);
         }
@@ -77,29 +68,32 @@ namespace MetroUnlocker.LibTSForge.SPP
     public class ProductKeyConfig
     {
         public Dictionary<Guid, ProductConfig> Products = new Dictionary<Guid, ProductConfig>();
-        private List<Guid> loadedPkeyConfigs = new List<Guid>();
+        private List<Guid> _loadedProductKeyConfigs = new List<Guid>();
 
         public void LoadConfig(Guid actId)
         {
             string pkcData;
-            Guid pkcFileId = SLApi.GetPkeyConfigFileId(actId);
+            Guid configFileId = SLApi.GetProductKeyConfigFileId(actId);
 
-            if (loadedPkeyConfigs.Contains(pkcFileId)) return;
+            if (configFileId == Guid.Empty) throw new Exception("This edition of Windows does not support sideloading keys.");
 
-            string licConts = SLApi.GetLicenseContents(pkcFileId);
+            if (_loadedProductKeyConfigs.Contains(configFileId)) return;
 
-            using (TextReader tr = new StringReader(licConts))
+            string licenseContents = SLApi.GetLicenseContents(configFileId);
+
+
+            using (TextReader tr = new StringReader(licenseContents))
             {
                 XmlDocument lic = new XmlDocument();
                 lic.Load(tr);
 
                 XmlNamespaceManager nsmgr = new XmlNamespaceManager(lic.NameTable);
                 nsmgr.AddNamespace("rg", "urn:mpeg:mpeg21:2003:01-REL-R-NS");
-                nsmgr.AddNamespace("r", "urn:mpeg:mpeg21:2003:01-REL-R-NS");
+                nsmgr.AddNamespace("random", "urn:mpeg:mpeg21:2003:01-REL-R-NS");
                 nsmgr.AddNamespace("tm", "http://www.microsoft.com/DRM/XrML2/TM/v2");
 
                 XmlNode root = lic.DocumentElement;
-                XmlNode pkcDataNode = root.SelectSingleNode("/rg:licenseGroup/r:license/r:otherInfo/tm:infoTables/tm:infoList/tm:infoBin[@name=\"pkeyConfigData\"]", nsmgr);
+                XmlNode pkcDataNode = root.SelectSingleNode("/rg:licenseGroup/random:license/random:otherInfo/tm:infoTables/tm:infoList/tm:infoBin[@name=\"pkeyConfigData\"]", nsmgr);
                 pkcData = Encoding.UTF8.GetString(Convert.FromBase64String(pkcDataNode.InnerText));
             }
 
@@ -114,13 +108,13 @@ namespace MetroUnlocker.LibTSForge.SPP
                 XmlNodeList rangeNodes = lic.SelectNodes("//p:ProductKeyConfiguration/p:KeyRanges/p:KeyRange", nsmgr);
                 XmlNodeList pubKeyNodes = lic.SelectNodes("//p:ProductKeyConfiguration/p:PublicKeys/p:PublicKey", nsmgr);
 
-                Dictionary<int, PKeyAlgorithm> algorithms = new Dictionary<int, PKeyAlgorithm>();
+                Dictionary<int, ProductKeyAlgorithm> algorithms = new Dictionary<int, ProductKeyAlgorithm>();
                 Dictionary<string, List<KeyRange>> ranges = new Dictionary<string, List<KeyRange>>();
 
-                Dictionary<string, PKeyAlgorithm> algoConv = new Dictionary<string, PKeyAlgorithm>
+                Dictionary<string, ProductKeyAlgorithm> algoConv = new Dictionary<string, ProductKeyAlgorithm>
                 {
-                    { "msft:rm/algorithm/pkey/2005", PKeyAlgorithm.PKEY2005 },
-                    { "msft:rm/algorithm/pkey/2009", PKeyAlgorithm.PKEY2009 }
+                    { "msft:rm/algorithm/pkey/2005", ProductKeyAlgorithm.ProductKey2005 },
+                    { "msft:rm/algorithm/pkey/2009", ProductKeyAlgorithm.ProductKey2009 }
                 };
 
                 foreach (XmlNode pubKeyNode in pubKeyNodes)
@@ -131,12 +125,10 @@ namespace MetroUnlocker.LibTSForge.SPP
 
                 foreach (XmlNode rangeNode in rangeNodes)
                 {
-                    string refActIdStr = rangeNode.SelectSingleNode("./p:RefActConfigId", nsmgr).InnerText;
+                    string refActIdString = rangeNode.SelectSingleNode("./p:RefActConfigId", nsmgr).InnerText;
 
-                    if (!ranges.ContainsKey(refActIdStr))
-                    {
-                        ranges[refActIdStr] = new List<KeyRange>();
-                    }
+                    if (!ranges.ContainsKey(refActIdString))
+                        ranges[refActIdString] = new List<KeyRange>();
 
                     KeyRange keyRange = new KeyRange();
                     keyRange.Start = int.Parse(rangeNode.SelectSingleNode("./p:Start", nsmgr).InnerText);
@@ -145,15 +137,15 @@ namespace MetroUnlocker.LibTSForge.SPP
                     keyRange.PartNumber = rangeNode.SelectSingleNode("./p:PartNumber", nsmgr).InnerText;
                     keyRange.Valid = rangeNode.SelectSingleNode("./p:IsValid", nsmgr).InnerText.ToLower() == "true";
 
-                    ranges[refActIdStr].Add(keyRange);
+                    ranges[refActIdString].Add(keyRange);
                 }
 
                 foreach (XmlNode configNode in configNodes)
                 {
-                    string refActIdStr = configNode.SelectSingleNode("./p:ActConfigId", nsmgr).InnerText;
-                    Guid refActId = new Guid(refActIdStr);
+                    string refActIdString = configNode.SelectSingleNode("./p:ActConfigId", nsmgr).InnerText;
+                    Guid refActId = new Guid(refActIdString);
                     int group = int.Parse(configNode.SelectSingleNode("./p:RefGroupId", nsmgr).InnerText);
-                    List<KeyRange> keyRanges = ranges[refActIdStr];
+                    List<KeyRange> keyRanges = ranges[refActIdString];
 
                     if (keyRanges.Count > 0 && !Products.ContainsKey(refActId))
                     {
@@ -172,31 +164,14 @@ namespace MetroUnlocker.LibTSForge.SPP
                 }
             }
 
-            loadedPkeyConfigs.Add(pkcFileId);
+            _loadedProductKeyConfigs.Add(configFileId);
         }
 
-        public ProductConfig MatchParams(int group, int serial)
+        public ProductConfig MatchParams(int groupId, int serial)
         {
-            foreach (ProductConfig config in Products.Values)
-            {
-                if (config.GroupId == group)
-                {
-                    foreach (KeyRange range in config.Ranges)
-                    {
-                        if (range.Contains(serial))
-                        {
-                            return config;
-                        }
-                    }
-                }
-            }
-
-            throw new FileNotFoundException("Failed to find product matching supplied product key parameters.");
-        }
-
-        public ProductKeyConfig()
-        {
-
+            ProductConfig matchingConfig = Products.Values.FirstOrDefault(config => config.GroupId == groupId && config.Ranges.Any(range => range.Contains(serial)));
+            if (matchingConfig == null) throw new FileNotFoundException("Failed to find product matching supplied product key parameters.");
+            return matchingConfig;
         }
     }
 }
