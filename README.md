@@ -16,7 +16,7 @@
 
 **Known bug:**
 
-If your disk has **0 bytes** of free space, the system might fail to write the new tokens file, leaving the tokens.dat file empty and when SPPSVC starts, it will recreate the file but everything will be deactivated—including Windows itself.
+If your disk has **0 bytes** of free space, the system might fail to write the new tokens file, leaving the `tokens.dat` file empty and when SPPSVC starts, it will recreate the file but everything will be deactivated—including Windows itself.
 
 MetroUnlocker always attempts to create a backup of your tokens before modifying them. Make sure you have at least **30MB** free of space before trying to activate sideloading. If something goes wrong, just restore the tokens.dat file from the backup to `C:\Windows\System32\spp\store\2.0`. In worst-case scenario, you can reactivate whatever you need activated again with **TSForge**.
 
