@@ -18,7 +18,7 @@ Known bug:
 
 If you have 0 bytes free on your disk, it might fail to write the new tokens, leaving the tokens file empty and when SPPSVC starts, it will recreate the file but everything will be deactivated, including Windows itself. 
 
-MetroUnlocker always tries to make a backup of your tokens before modifying them. Just make sure you have at least 30MB free before trying to activate sideloading. If something goes wrong, just restore the tokens.dat from the backup to `C:\Windows\System32\spp\store\2.0\`. In worst case you can just reactivate what you want activated again with TSForge.
+MetroUnlocker always attempts to make a backup of your tokens before modifying them. Just make sure you have at least 30MB free before trying to activate sideloading. If something goes wrong, just restore the tokens.dat from the backup to `C:\Windows\System32\spp\store\2.0\`. In worst case you can just reactivate what you want activated again with TSForge.
 
 Feel free to reach out to me or create an issue if you need help.
 
